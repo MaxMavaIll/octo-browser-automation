@@ -1,0 +1,7 @@
+__pycache__/
+config.toml
+test.py
+projects/
+.chromedriver
+.venv/
+.DS_Store
