@@ -10,11 +10,26 @@ from octo_browser_integration.pyppeteer import PyppeteerHelper
 
 
 class OctoBrowserPyppeteer:
+    ####### Proxies ########
+    def update_proxies(self, profile_id, ip, port, login, password):
+        data = {
+            "proxy": { 
+                "type": "socks5",
+                "host": ip,
+                "port": port,
+                "login": login,
+                "password": password
+            }
+        }
+
+        response = requests.patch(self.url_api + f'/profiles/{profile_id}',  headers=self.headers, json=data)
+        if response.status_code == 200:
+            print(f"Profile {profile_id} updated")
+        else:
+            print(f"Error fetching profiles: {response.text}")
     
-
-
-    def get_registerable_profiles(self):
-        tag = 'test'
+    ####### PROFILES #######
+    def _fetch_profiles(self, tag: str):
         params = {
             "page_len": 100,
             "page": 0,
@@ -24,12 +39,30 @@ class OctoBrowserPyppeteer:
 
         response = requests.get(self.url_api + '/profiles', params=params, headers=self.headers)
         if response.status_code == 200:
-            data = response.json()
-            sorted_profiles = sorted(data["data"], key=lambda x: int(re.search(r'\d+', x['title']).group()))
-            # result = self.gg_sheet.get_registerable_profiles_gg_sh(sorted_profiles)
-            return sorted_profiles
+            return response.json().get("data", [])
+        else:
+            print(f"Error fetching profiles: {response.text}")
+
         return []
 
+    def get_registerable_profiles(self, title: str | list = 'test'):
+        if isinstance(title, str):
+            all_profiles = self._fetch_profiles(title)
+            sorted_profiles = sorted(all_profiles, key=lambda x: int(re.search(r'\d+', x['title']).group()))
+            return sorted_profiles
+
+        elif isinstance(title, list):
+            all_profiles = []
+            for tag in title:
+                all_profiles.extend(self._fetch_profiles(tag))
+
+            sorted_profiles = sorted(all_profiles, key=lambda x: int(re.search(r'\d+', x['title']).group()))
+            return sorted_profiles
+
+        return []
+
+
+    ####### Work with Windows #######
     async def start_octo_profile(self, profile_id):
         url = f'{self.url_local_api}/profiles/start'
         payload = {'uuid': profile_id, 'headless': False, 'debug_port': True}
@@ -81,6 +114,9 @@ class OctoBrowserPyppeteer:
             print(f"Error connecting to browser: {e}")
             return None
 
+
+
+    ####### Interaction with windows #######
     async def open_new_tab(self, browser, profile_id):
         page = await browser.newPage()
         await page.goto('http://google.com')
@@ -100,9 +136,9 @@ class OctoBrowserPyppeteer:
         self.url_api = url_api
         self.url_local_api = url_local_api
         self.token = token
-        self.headers = {'X-Octo-Api-Token': token}
+        self.headers = {'X-Octo-Api-Token': token, 'Content-Type': 'application/json'}
         self.active_profiles = self.get_active_profiles_local()
-        self.pages = {} 
+        self.pages = {}
         self.gg_sheet = GoogleSheets(url_sheets=self.config['google_sheet']['api'])
         self.captcha = CaptchaAPI(api_key=self.config['2captcha']['api_key'])
         self.helper_pyppeteer = PyppeteerHelper(catpcha=self.captcha)

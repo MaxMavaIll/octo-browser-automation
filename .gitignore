@@ -5,3 +5,4 @@ projects/
 .chromedriver
 .venv/
 .DS_Store
+replece_proxies.txt

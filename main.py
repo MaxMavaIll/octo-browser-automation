@@ -40,7 +40,7 @@ async def main():
 
     profiles = octo.get_registerable_profiles()
 
-    semaphore = asyncio.Semaphore(2)
+    semaphore = asyncio.Semaphore(4)
 
     async def sem_process(profile):
         async with semaphore:
