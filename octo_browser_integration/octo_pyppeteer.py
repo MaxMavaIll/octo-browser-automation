@@ -1,3 +1,6 @@
+import json
+import logging
+import os
 import aiohttp
 import re
 import requests
@@ -90,7 +93,10 @@ class OctoBrowserPyppeteer:
         for p in self.active_profiles:
             if p.get('uuid') == profile_id and p.get('state') == 'STARTED':
                 print(f"{profile_id} -> {p.get('debug_port')}")
-                return p.get('debug_port')
+                if p.get('debug_port'):
+                    return p.get('debug_port')
+                await self.stop_octo_profile(profile_id)
+            
         data = await self.start_octo_profile(profile_id)
         if isinstance(data, dict):
             return data.get('debug_port')
@@ -131,8 +137,50 @@ class OctoBrowserPyppeteer:
             await page.close()
         del self.pages[profile_id]
 
+    def update_data(self, data: dict):
+        file_path = os.path.join('data', 'data.json')
+        with open(file_path, 'w') as file:
+            json.dump(data, file)
+
+    def get_data(self):
+        file_path = os.path.join('data', 'data.json')
+        if not os.path.exists('data'):
+            os.mkdir('data')
+        
+        if not os.path.exists(file_path):
+            with open(file_path, 'w') as file:
+                json.dump({}, file)
+
+        with open(file_path, 'r') as file:
+            result = json.load(file)
+        
+        return result
+    
+    def update_password(self, config_profiles):
+        for profile in config_profiles.values():
+            password = self.config['PASSWORD'].copy()
+            if profile['password']:
+                password.insert(0, profile['password'])
+            profile['password'] = password
+
+        return config_profiles
+    
+    # def log_setup(self):
+    #     if not os.path.exists('logs'):
+    #         os.mkdir('logs')
+
+    #     log = logging.getLogger('octo')
+    #     log.setLevel(logging.DEBUG)
+    #     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    #     file_handler = logging.FileHandler('octo.log')
+    #     file_handler.setLevel(logging.DEBUG)
+    #     file_handler.setFormatter(formatter)
+    #     log.addHandler(file_handler)
+    #     return log
+
     def __init__(self, url_api: str, url_local_api: str, token: str):
         self.config = toml.load('config.toml')
+        self.monitoring_version = False
         self.url_api = url_api
         self.url_local_api = url_local_api
         self.token = token
@@ -142,3 +190,11 @@ class OctoBrowserPyppeteer:
         self.gg_sheet = GoogleSheets(url_sheets=self.config['google_sheet']['api'])
         self.captcha = CaptchaAPI(api_key=self.config['2captcha']['api_key'])
         self.helper_pyppeteer = PyppeteerHelper(catpcha=self.captcha)
+        self.data = self.get_data()
+        # self.log = self.log_setup()
+
+
+        network_accouts = self.gg_sheet.get_network_accout()
+        self.info_networks = network_accouts["info_project"]
+        self.info_accounts = self.update_password(network_accouts["info_profile"])
+        

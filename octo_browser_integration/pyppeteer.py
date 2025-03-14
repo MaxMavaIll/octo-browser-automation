@@ -1,5 +1,6 @@
 import asyncio
 import random
+import sys
 import time
 
 
@@ -40,6 +41,50 @@ class PyppeteerHelper:
         else:
             raise ValueError("Параметр 'by' повинен бути 'css' або 'xpath'")
         await self.random_sleep()
+
+    async def clean_input(self, page: Page, selector: str, by: str = "css"):
+        if by.lower() == "css":
+            await page.waitForSelector(selector)
+            await page.evaluate(f'document.querySelector("{selector}").value = "";')
+
+        elif by.lower() == "xpath":
+            element = await page.waitForXPath(selector)
+            await page.evaluate('(el) => el.value = ""', element)
+        else:
+            raise ValueError("Параметр 'by' повинен бути 'css' або 'xpath'")
+        await self.random_sleep()
+
+    async def clean_input_key(self, page: Page, selector: str, by: str = "css"):
+        if by.lower() == "css":
+            await page.waitForSelector(selector)
+            element = await page.querySelector(selector)
+        elif by.lower() == "xpath":
+            element = await page.waitForXPath(selector)
+        else:
+            raise ValueError("Параметр 'by' повинен бути 'css' або 'xpath'")
+
+        
+        await element.click()
+        await page.evaluate('document.execCommand("selectAll")')
+        # await page.keyboard.down(modifier_key)
+        # await page.keyboard.press("A")
+        # await page.keyboard.up(modifier_key)
+        await page.keyboard.press('Backspace')
+        await self.random_sleep()
+
+    async def get_element_text(self, page: Page, selector: str, by: str = "css"):
+        if by.lower() == "css":
+            element = await page.querySelector(selector)
+            if not element:
+                return None
+            text = await page.evaluate('(el) => el?.innerText', await page.querySelector(selector))
+        elif by.lower() == "xpath":
+            element = await page.xpath(selector)
+            if not element:
+                return None
+            text = await page.evaluate('(el) => el?.innerText', element[0])
+
+        return text
 
     async def switch_to_iframe(self, page: Page, selector: str):
         await page.waitForSelector(selector)

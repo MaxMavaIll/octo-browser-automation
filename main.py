@@ -20,15 +20,18 @@ async def process_profile(octo: OctoBrowserPyppeteer, profile):
     if browser is None:
         return
 
-    page1 = await octo.open_new_tab(browser, profile_id)
-    # page2 = await octo.open_new_tab(browser, profile_id)
+    try:
+        page1 = await octo.open_new_tab(browser, profile_id)
+        # page2 = await octo.open_new_tab(browser, profile_id)
+    
+        await test(octo, page1)
+    except Exception as e:
+        print(f"Error processing profile {profile['title']}: {e}")
+    finally:
+        await octo.close_current_tabs(profile_id)
+        # await octo.stop_octo_profile(profile_id)
 
-    await test(octo, page1)
-
-    await octo.close_current_tabs(profile_id)
-    # await octo.stop_octo_profile(profile_id)
-
-    await browser.disconnect()
+        await browser.disconnect()
 
 async def main():
     config_toml = toml.load('config.toml')
