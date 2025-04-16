@@ -10,7 +10,9 @@ from projects.TestProject.test import test
 async def process_profile(octo: OctoBrowserPyppeteer, profile):
     octo.log.info(f"Processing profile: {profile['title']}")
     profile_id = profile['uuid']
-    port = await octo.get_debug_port(profile_id)
+    name = profile['title']
+
+    port = await octo.get_debug_port(profile_id, name)
     if port is None:
         return
 

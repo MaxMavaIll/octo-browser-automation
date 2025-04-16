@@ -22,7 +22,7 @@ class PyppeteerHelper:
             element = await page.waitForSelector(selector, timeout=timeout)
             return element
         except Exception as e :
-            self.log.error(f"Element not found by xpath:{selector}\nError: {e}")
+            self.log.error(f"Element not found by css: {selector}\nError: {e}")
             return None
 
     async def random_sleep(self, min_sec: int = 2, max_sec: int = 4):
@@ -36,7 +36,7 @@ class PyppeteerHelper:
 
     async def enter_text(self, page: Page, selector: str, text: str, by: str = "css"):
         if by.lower() == "css":
-            elements = await self.safe_wait_for_selector(selector)
+            elements = await self.safe_wait_for_selector(page, selector)
             if elements:
                 await page.type(selector, text)
         elif by.lower() == "xpath":
@@ -49,7 +49,7 @@ class PyppeteerHelper:
 
     async def click_element(self, page: Page, selector: str, by: str = "css"):
         if by.lower() == "css":
-            elements = await self.safe_wait_for_selector(selector)
+            elements = await self.safe_wait_for_selector(page, selector)
             if elements:
                 await elements.click(selector)
         elif by.lower() == "xpath":

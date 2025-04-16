@@ -176,8 +176,6 @@ class OctoBrowserPyppeteer:
         if not os.path.exists(LOG_DIR):
             os.makedirs(LOG_DIR)
 
-        if not os.path.exists(LOG_FILE):
-            os.makedirs(LOG_DIR)
 
         LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
