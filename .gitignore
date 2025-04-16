@@ -7,3 +7,5 @@ projects/
 .DS_Store
 replece_proxies.txt
 data/
+log/
+monitoring.py
