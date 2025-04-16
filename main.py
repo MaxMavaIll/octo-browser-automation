@@ -6,11 +6,9 @@ import asyncio
 from octo_browser_integration.octo_pyppeteer import OctoBrowserPyppeteer
 from projects.TestProject.test import test
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
-log = logging.getLogger('octo')
-config_toml = toml.load('config.toml')
 
 async def process_profile(octo: OctoBrowserPyppeteer, profile):
+    octo.log.info(f"Processing profile: {profile['title']}")
     profile_id = profile['uuid']
     port = await octo.get_debug_port(profile_id)
     if port is None:
@@ -43,7 +41,7 @@ async def main():
 
     profiles = octo.get_registerable_profiles()
 
-    semaphore = asyncio.Semaphore(4)
+    semaphore = asyncio.Semaphore(1)
 
     async def sem_process(profile):
         async with semaphore:
